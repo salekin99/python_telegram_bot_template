@@ -2,7 +2,7 @@
 template for creating bots with PTB version 20.4+ <br>
 https://docs.python-telegram-bot.org/en/stable/ <br>
 
-# Usage
+## Usage
 ```bash
 pip install python-telegram-bot
 ```
