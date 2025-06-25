@@ -1,9 +1,8 @@
-import os
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 
-TOKEN = os.getenv("BOT_TOKEN")
-ADMIN_ID = int(os.getenv("ADMIN_ID"))
+BOT_TOKEN = "7631311934:AAHE1WXVpmWoYyL3dMj-wLzZIOCPV2KAqOA"
+ADMIN_ID = 6084404125
 
 async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("👋 হ্যালো! প্রেডিকশন বটে স্বাগতম।")
@@ -27,9 +26,8 @@ async def button(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await q.edit_message_text(f"{q.message.text}\n\n🤖 আপনার চয়েস: {resp}")
 
 if __name__ == "__main__":
-    app = ApplicationBuilder().token(TOKEN).build()
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("prediction", prediction))
     app.add_handler(CallbackQueryHandler(button))
     app.run_polling()
-
