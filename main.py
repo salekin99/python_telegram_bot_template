@@ -1,76 +1,35 @@
 import os
-import json
-import logging
-from uuid import uuid4
-from telegram import Update, InlineQueryResultArticle, InputTextMessageContent
-from telegram.ext import (filters, ApplicationBuilder, ContextTypes,
-                          CommandHandler, MessageHandler, CallbackQueryHandler,
-                          InlineQueryHandler)
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO)
+TOKEN = os.getenv("BOT_TOKEN")
+ADMIN_ID = int(os.getenv("ADMIN_ID"))
 
-# reads your token from environment variables
-TOKEN = os.getenv("TELEGRAM_TOKEN")
+async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("👋 হ্যালো! প্রেডিকশন বটে স্বাগতম।")
 
-
-# the function that runs when /start is sent to the bot
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_id = update.effective_chat.id
-    await context.bot.send_message(chat_id,
-                                   """Hi I'm a telegram bot template! """)
-
-
-# the function that recieves text messages from users
-async def recieve_message(update: Update, context):
-    if update.effective_chat.type != 'private':  # there's the inline mode for groups
+async def prediction(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_ID:
         return
-    await update.message.reply_text(
-        text='say something??',
-        reply_to_message_id=update.message.message_id,
-        parse_mode="HTML")
-
-
-# recieves the keyboard button clicks
-async def get_keyboad_reply(update: Update, context, optional_pram=None):
-    chat_id = update.effective_chat.id
-    message = update.callback_query.data
-
-
-# recieves voice messages
-async def get_voice(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    audio_file = await context.bot.get_file(update.message.voice.file_id)
-    await audio_file.download_to_drive(update.message.voice.file_id + '.ogg')
-    await context.bot.send_message(update.effective_chat.id, 'listening...')
-
-
-async def inline_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.inline_query.query
-
-    if query == '':
+    txt = " ".join(ctx.args)
+    if not txt:
+        await update.message.reply_text("❗ ব্যবহার: /prediction [টেক্সট]")
         return
-    results = [
-        InlineQueryResultArticle(
-            id=str(uuid4()),
-            title='some item',
-            input_message_content=InputTextMessageContent('item_data'))
-    ]
-    await update.inline_query.answer(results)
+    kb = InlineKeyboardMarkup([
+        [InlineKeyboardButton("✅ হ্যা", callback_data="yes"), InlineKeyboardButton("❌ না", callback_data="no")]
+    ])
+    await ctx.bot.send_message(chat_id=update.effective_chat.id, text=txt, reply_markup=kb)
 
+async def button(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    q = update.callback_query
+    await q.answer()
+    resp = "✅ আপনি হ্যা বেছে নিয়েছেন।" if q.data=="yes" else "❌ আপনি না বেছে নিয়েছেন।"
+    await q.edit_message_text(f"{q.message.text}\n\n🤖 আপনার চয়েস: {resp}")
 
-if __name__ == '__main__':
-    application = ApplicationBuilder().token(TOKEN).build()
-    application.add_handler(
-        CallbackQueryHandler(get_keyboad_reply, block=False))
-    application.add_handler(
-        CommandHandler(['start', 'help'], start, block=False))
-    application.add_handler(
-        MessageHandler(filters.TEXT & (~filters.COMMAND),
-                       recieve_message,
-                       block=False))
-    application.add_handler(MessageHandler(filters.VOICE, get_voice))
-    application.add_handler(InlineQueryHandler(inline_query))
+if __name__ == "__main__":
+    app = ApplicationBuilder().token(TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("prediction", prediction))
+    app.add_handler(CallbackQueryHandler(button))
+    app.run_polling()
 
-    application.run_polling()
